@@ -71,9 +71,9 @@
 //
 // Temperature Sensors
 //
-#define TEMP_0_PIN          8
-#define TEMP_1_PIN          9
-#define TEMP_BED_PIN       10
+#define TEMP_0_PIN          8   // Analog Input
+#define TEMP_1_PIN          9   // Analog Input
+#define TEMP_BED_PIN       10   // Analog Input
 
 //
 // Heaters / Fans
@@ -81,9 +81,7 @@
 #define HEATER_0_PIN        2
 #define HEATER_1_PIN        3
 #define HEATER_BED_PIN      4
-#ifndef FAN_PIN
-  #define FAN_PIN           7
-#endif
+#define FAN_PIN             7
 
 //
 // Misc. Functions
@@ -92,7 +90,7 @@
 #define SDSS               53
 #define LED_PIN            13
 #define PS_ON_PIN          12
-#define SUICIDE_PIN        54   // Must be enabled at startup to keep power flowing
+#define SUICIDE_PIN        54  // Must be enabled at startup to keep power flowing
 #define KILL_PIN           -1
 
 #if ENABLED(ULTRA_LCD)
@@ -104,17 +102,17 @@
     #if ENABLED(MKS_MINI_12864)
       #define DOGLCD_A0     5
       #define DOGLCD_CS    21
-      #define BTN_EN1      40
-      #define BTN_EN2      42
+      //#define BTN_EN1      40
+      //#define BTN_EN2      42
     #else
-      #define LCD_PINS_RS  20
-      #define LCD_PINS_ENABLE 17
-      #define LCD_PINS_D4  16
+      #define LCD_PINS_RS   5   //20 [rs]
+      #define LCD_PINS_ENABLE 36   //6 //17
+      #define LCD_PINS_D4  21   //16
       #define LCD_PINS_D5  21
       #define LCD_PINS_D6   5
       #define LCD_PINS_D7   6
-      #define BTN_EN1      42
-      #define BTN_EN2      40
+      #define BTN_EN1      17
+      #define BTN_EN2      16
     #endif
 
     #define BTN_ENC        19
