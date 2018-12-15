@@ -52,6 +52,11 @@
 #ifndef MSG_SD_REMOVED
   #define MSG_SD_REMOVED                      _UxGT("Card removed")
 #endif
+
+#ifndef MSG_FILAMENT_ERROR
+  #define MSG_FILAMENT_ERROR                  _UxGT("Err:No Filament")
+#endif
+
 #ifndef MSG_LCD_ENDSTOPS
   #define MSG_LCD_ENDSTOPS                    _UxGT("Endstops") // Max length 8 characters
 #endif
@@ -444,6 +449,11 @@
 #ifndef MSG_MOVE_E
   #define MSG_MOVE_E                          _UxGT("Extruder")
 #endif
+
+#ifndef MSG_HOTEND_TOO_COLD
+  #define MSG_HOTEND_TOO_COLD                 _UxGT("Hotend too cold")
+#endif
+
 #ifndef MSG_MOVE_01MM
   #define MSG_MOVE_01MM                       _UxGT("Move 0.1mm")
 #endif
@@ -624,6 +634,44 @@
 #ifndef MSG_FILAMENT_DIAM
   #define MSG_FILAMENT_DIAM                   _UxGT("Fil. Dia.")
 #endif
+
+#ifndef MSG_RUNOUT_SENSORS
+  #define MSG_RUNOUT_SENSORS                  _UxGT("Runout sensors")
+#endif
+#ifndef MSG_POWER_OUTAGE
+  #define MSG_POWER_OUTAGE                    _UxGT("Power outage")
+#endif
+ #ifndef MSG_MIX
+  #define MSG_MIX                             _UxGT("Mix")
+#endif
+#ifndef MSG_MIXER
+  #define MSG_MIXER                           _UxGT("Mixer")
+#endif
+#ifndef MSG_GRADIENT
+  #define MSG_GRADIENT                        _UxGT("Gradient")
+#endif
+#ifndef MSG_FULL_GRADIENT
+  #define MSG_FULL_GRADIENT                   _UxGT("Full gradient")
+#endif
+#ifndef MSG_TOGGLE_MIX
+  #define MSG_TOGGLE_MIX                      _UxGT("Toggle mix")
+#endif
+#ifndef MSG_GRADIENT_MIX
+  #define MSG_GRADIENT_MIX                    _UxGT("Gradient mix")
+#endif
+#ifndef MSG_START_MIX
+  #define MSG_START_MIX                       _UxGT("Start mix")
+#endif
+#ifndef MSG_END_MIX
+  #define MSG_END_MIX                         _UxGT("  End mix")
+#endif
+#ifndef MSG_START_Z
+  #define MSG_START_Z                         _UxGT("Start Z")
+#endif
+#ifndef MSG_END_Z
+  #define MSG_END_Z                           _UxGT("  End Z")
+#endif
+
 #ifndef MSG_FILAMENT_UNLOAD
   #define MSG_FILAMENT_UNLOAD                 _UxGT("Unload mm")
 #endif
@@ -669,6 +717,11 @@
 #ifndef MSG_STOP_PRINT
   #define MSG_STOP_PRINT                      _UxGT("Stop print")
 #endif
+
+#ifndef MSG_CANCEL_PRINT
+  #define MSG_CANCEL_PRINT                    _UxGT("Cancel print")
+#endif
+
 #ifndef MSG_POWER_LOSS_RECOVERY
   #define MSG_POWER_LOSS_RECOVERY             _UxGT("Power-Loss Recovery")
 #endif
@@ -969,6 +1022,14 @@
 #ifndef MSG_INFO_PSU
   #define MSG_INFO_PSU                        _UxGT("PSU")
 #endif
+
+#ifndef MSG_HW_VER
+  #define MSG_HW_VER                        _UxGT("HW Ver: V")
+#endif
+#ifndef MSG_FW_VER
+  #define MSG_FW_VER                        _UxGT("FW Ver: V1.1")
+#endif
+
 #ifndef MSG_DRIVE_STRENGTH
   #define MSG_DRIVE_STRENGTH                  _UxGT("Drive Strength")
 #endif

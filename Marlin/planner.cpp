@@ -1452,6 +1452,35 @@ void Planner::check_axes_activity() {
 
 #endif // PLANNER_LEVELING
 
+#if ENABLED(GRADIENT_MIX)
+   void gradient_change(const int8_t start_p, const int8_t end_p, const float start_z, const float end_z) {
+    if (WITHIN(current_position[Z_AXIS], start_z, end_z)) {
+      mixer.rate[NOZZLE0] = start_p + (end_p - start_p) * ((current_position[Z_AXIS] - start_z) / (end_z - start_z));
+      if (mixer.end_pct > mixer.start_pct) {
+        NOMORE(mixer.rate[NOZZLE0], end_p);
+        NOLESS(mixer.rate[NOZZLE0], start_p);
+      }
+      else {
+        NOMORE(mixer.rate[NOZZLE0], start_p);
+        NOLESS(mixer.rate[NOZZLE0], end_p);
+      }
+      mixer.rate[NOZZLE1] = 100 - mixer.rate[NOZZLE0];
+      //powerloss.Nozzle0_Value = mixer.rate[NOZZLE0];
+      mixing_factor[NOZZLE0] = RECIPROCAL(mixer.rate[NOZZLE0] * 0.01);
+      mixing_factor[NOZZLE1] = RECIPROCAL(mixer.rate[NOZZLE1] * 0.01);
+    }
+     if (current_position[Z_AXIS] > end_z)
+      mixer.gradient_flag = false;
+  }
+   void gradient_control(void) {
+    if (mixer.gradient_flag)
+    {
+          gradient_change(mixer.start_pct, mixer.end_pct, mixer.start_z, mixer.end_z);
+    }
+  }
+ #endif // GRADIENT_MIX
+
+
 void Planner::quick_stop() {
 
   // Remove all the queued blocks. Note that this function is NOT
@@ -1776,6 +1805,10 @@ bool Planner::_populate_block(block_t * const block, bool split_move,
 
   // Bail if this is a zero-length block
   if (block->step_event_count < MIN_STEPS_PER_SEGMENT) return false;
+
+  #if ENABLED(GRADIENT_MIX)
+    gradient_control();
+  #endif
 
   // For a mixing extruder, get a magnified esteps for each
   #if ENABLED(MIXING_EXTRUDER)

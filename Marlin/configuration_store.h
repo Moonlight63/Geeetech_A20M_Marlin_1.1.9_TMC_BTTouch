@@ -24,6 +24,7 @@
 #define CONFIGURATION_STORE_H
 
 #include "MarlinConfig.h"
+extern float hardware_version;
 
 class MarlinSettings {
   public:
@@ -31,8 +32,12 @@ class MarlinSettings {
 
     static uint16_t datasize();
 
+    static bool poweroff_save();
+    static bool poweroff_load();
     static void reset();
-    static bool save();   // Return 'true' if data was saved
+    static bool save();
+    static bool Fixed_parameter_save() ;
+    static bool Fixed_parameter_load() ;
 
     FORCE_INLINE static bool init_eeprom() {
       reset();

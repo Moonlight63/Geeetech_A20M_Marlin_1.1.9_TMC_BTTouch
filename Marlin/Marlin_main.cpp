@@ -198,6 +198,8 @@
  * M405 - Enable Filament Sensor flow control. "M405 D<delay_cm>". (Requires FILAMENT_WIDTH_SENSOR)
  * M406 - Disable Filament Sensor flow control. (Requires FILAMENT_WIDTH_SENSOR)
  * M407 - Display measured filament diameter in millimeters. (Requires FILAMENT_WIDTH_SENSOR)
+ * M408 - Enable filament runout sensor(s). (Requires FILAMENT_RUNOUT_SENSOR)
+ * M409 - Disable filament runout sensor(s). (Requires FILAMENT_RUNOUT_SENSOR)
  * M410 - Quickstop. Abort all planned moves.
  * M420 - Enable/Disable Leveling (with current values) S1=enable S0=disable (Requires MESH_BED_LEVELING or ABL)
  * M421 - Set a single Z coordinate in the Mesh Leveling grid. X<units> Y<units> Z<units> (Requires MESH_BED_LEVELING, AUTO_BED_LEVELING_BILINEAR, or AUTO_BED_LEVELING_UBL)
@@ -271,6 +273,12 @@
 #include "duration_t.h"
 #include "types.h"
 #include "parser.h"
+
+// Power Loss Recovery
+powerloss_t powerloss; // (zero'ed by bootloader)
+char tmp_y[50];
+extern char lcd_status_message[];
+
 
 #if ENABLED(AUTO_POWER_CONTROL)
   #include "power.h"
@@ -681,6 +689,9 @@ uint8_t target_extruder;
 #endif
 
 float cartes[XYZ] = { 0 };
+
+// Filament Runout Sensors
+bool filament_runout_enabled = false;
 
 #if ENABLED(FILAMENT_WIDTH_SENSOR)
   bool filament_sensor; // = false;                             // M405 turns on filament sensor control. M406 turns it off.
@@ -10471,6 +10482,12 @@ void quickstop_stepper() {
   SYNC_PLAN_POSITION_KINEMATIC();
 }
 
+//
+// Filament Runout Sensors
+//
+inline void gcode_M408() { filament_runout_enabled = true; }
+inline void gcode_M409() { filament_runout_enabled = false; }
+
 #if HAS_LEVELING
 
   //#define M420_C_USE_MEAN
@@ -12046,6 +12063,10 @@ inline void gcode_M355() {
     const int mix_index = parser.intval('S');
     if (mix_index < MIXING_STEPPERS)
       mixing_factor[mix_index] = MAX(parser.floatval('P'), 0.0);
+      if(mix_index == 0)
+      {
+        powerloss.Nozzle0_Value = (uint8_t)(mix_value*100);
+      }
   }
 
   /**
@@ -12081,6 +12102,56 @@ inline void gcode_M355() {
     inline void gcode_M165() { gcode_get_mix(); }
   #endif
 
+  #if ENABLED(GRADIENT_MIX)
+     mixer_t mixer = {
+      { 0 }, { 0 },
+      0,
+      0, 0,
+      100, 0,
+      // false,
+      false
+    };
+     /**
+     * M166: Set a simple gradient mix for a two-component mixer
+     *       based on the Geeetech A10M implementation by Jone Liu.
+     *
+     * Example: M166 S1 A0 Z20 P100 Q0
+     */
+    inline void gcode_M166() {
+      bool gflag = parser.seen('S') ? parser.value_bool() : mixer.gradient_flag;
+      if (parser.seenval('A')) mixer.start_z = parser.value_float();
+      if (parser.seenval('Z')) mixer.end_z = parser.value_float();
+      if (parser.seenval('P')) mixer.start_pct = (uint8_t)constrain(parser.value_int(), 0, 100);
+      if (parser.seenval('Q')) mixer.end_pct = (uint8_t)constrain(parser.value_int(), 0, 100);
+       if (mixer.start_pct == mixer.end_pct || mixer.start_z == mixer.end_z)
+        gflag = false;
+	if(mixer.gradient_flag = true)
+	{
+		powerloss.Nozzle0_Value = 110;
+		powerloss.start_ps =mixer.start_pct;
+		powerloss.end_ps = mixer.end_pct;
+		powerloss.start_zs = mixer.start_z;
+		powerloss.end_zs = mixer.end_z;
+		
+	}
+      SERIAL_ECHOPGM("Gradient Mix ");
+      if ((mixer.gradient_flag = gflag)) {
+        SERIAL_ECHOPAIR("ON from Z", mixer.start_z);
+        SERIAL_ECHOPAIR(" (", int(mixer.start_pct));
+        SERIAL_ECHOPAIR("%|", int(100-mixer.start_pct));
+        SERIAL_ECHOPAIR("%) to Z", mixer.end_z);
+        SERIAL_ECHOPAIR(" (", int(mixer.end_pct));
+        SERIAL_ECHOPAIR("%|", int(100-mixer.end_pct));
+        SERIAL_ECHOPGM("%)");
+      }
+      else
+        SERIAL_ECHOPGM("OFF");
+      SERIAL_EOL();
+    
+    }
+   #endif
+
+
 #endif // MIXING_EXTRUDER
 
 /**
@@ -12101,6 +12172,17 @@ inline void gcode_M999() {
 
   // gcode_LastN = Stopped_gcode_LastN;
   flush_and_request_resend();
+}
+
+inline void gcode_M2000(){
+	
+}
+inline void gcode_M2009(){
+	if (parser.seen('V')) hardware_version = parser.value_celsius();
+	//SERIAL_ECHOPAIR("HV...:", hardware_version);//liu
+	(void)settings.Fixed_parameter_save();
+	SERIAL_ECHOLNPGM("HV_set_ok");
+	
 }
 
 #if DO_SWITCH_EXTRUDER
@@ -12894,6 +12976,11 @@ void process_parsed_command() {
         #if ENABLED(DIRECT_MIXING_IN_G1)
           case 165: gcode_M165(); break;                          // M165: Set Multiple Mixing Components
         #endif
+        #if ENABLED(GRADIENT_MIX)
+          case 166: // M166: Set gradient Z range and mix range
+            gcode_M166();
+            break;
+        #endif
       #endif
 
       #if DISABLED(NO_VOLUMETRICS)
@@ -12998,6 +13085,13 @@ void process_parsed_command() {
         case 406: gcode_M406(); break;                            // M406: Disable Filament Width Sensor
         case 407: gcode_M407(); break;                            // M407: Report Measured Filament Width
       #endif
+
+      case 408:   // M408: Filament runout on
+        gcode_M408();
+        break;
+      case 409:   // M409: Filament runout off
+        gcode_M409();
+        break;
 
       #if HAS_LEVELING
         case 420: gcode_M420(); break;                            // M420: Set Bed Leveling Enabled / Fade
@@ -13104,6 +13198,13 @@ void process_parsed_command() {
       #endif
 
       case 999: gcode_M999(); break;                              // M999: Restart after being Stopped
+
+      case 2000: //  
+        gcode_M2000();
+        break;
+      case 2009: //  
+        gcode_M2009();
+        break;
 
       default: parser.unknown_command_error();
     }
@@ -15100,6 +15201,7 @@ void setup() {
   // Load data from EEPROM if available (or use defaults)
   // This also updates variables in the planner, elsewhere
   (void)settings.load();
+  (void)settings.Fixed_parameter_load();
 
   #if HAS_M206_COMMAND
     // Initialize current position based on home_offset
@@ -15277,6 +15379,18 @@ void setup() {
   #if ENABLED(SDSUPPORT) && DISABLED(ULTRA_LCD)
     card.beginautostart();
   #endif
+
+  // A20M Custom pins
+  SET_INPUT(CONTINUITY_PIN);
+  SET_INPUT(FIL_RUNOUT_PIN);
+  SET_INPUT(FIL_RUNOUT2_PIN);
+   if (powerloss.recovery == Rec_Outage) {
+    lcd_goto_resume_menu();
+    //SERIAL_ECHOLN("Rec_Outage");
+    //return;
+  }
+  //SERIAL_ECHOLNPAIR("recovery=", int(powerloss.recovery));
+
 }
 
 /**
@@ -15372,6 +15486,75 @@ void loop() {
       if (++cmd_queue_index_r >= BUFSIZE) cmd_queue_index_r = 0;
     }
   }
+
+  if (commands_in_queue == 0) {
+    switch (powerloss.recovery) {
+      default: break;
+      case Rec_Recovering1:
+        sprintf_P(tmp_y, PSTR("M190 S%u"), powerloss.B_t);
+        //SERIAL_ECHOLN(tmp_y);
+        enqueue_and_echo_command(tmp_y);
+         sprintf_P(tmp_y, PSTR("M109 T0 S%u"), powerloss.T0_t);
+        //SERIAL_ECHOLN(tmp_y);
+        enqueue_and_echo_command(tmp_y);
+        
+        sprintf_P(tmp_y, PSTR("M106  S255"));
+        enqueue_and_echo_command(tmp_y);
+         sprintf_P(tmp_y, PSTR("G28 X"));
+        //SERIAL_ECHOLN(tmp_y);
+        enqueue_and_echo_command(tmp_y);
+         sprintf_P(tmp_y,PSTR("G28 Y"));
+        //SERIAL_ECHOLN(tmp_y);
+        enqueue_and_echo_command(tmp_y);
+		
+	sprintf_P(tmp_y, PSTR("G0 F1000 Z%u.%u"), powerloss.Z_t / 10, powerloss.Z_t % 10);//jone
+       enqueue_and_echo_command(tmp_y);
+	if(powerloss.Nozzle0_Value <101)
+	{
+		mixing_factor[NOZZLE0] = RECIPROCAL( powerloss.Nozzle0_Value* 0.01);
+		mixing_factor[NOZZLE1] = RECIPROCAL((100-powerloss.Nozzle0_Value) * 0.01);
+	}
+	else
+	{
+		mixer.gradient_flag =true;
+		mixer.start_pct =powerloss.start_ps;
+		mixer.end_pct=powerloss.end_ps;
+		mixer.start_z =powerloss.start_zs;
+		mixer.end_z =powerloss.end_zs;    	
+	}
+         axis_homed[Z_AXIS] = axis_known_position[Z_AXIS] = true;
+        powerloss.recovery = Rec_Recovering2;
+        break;
+      case Rec_Recovering2:
+        if (strlen(powerloss.print_dir) > 1)
+          sprintf_P(tmp_y, PSTR("M32 S%lu !/%s/%s"), powerloss.pos_t, powerloss.print_dir, powerloss.P_file_name);
+        else
+          sprintf_P(tmp_y, PSTR("M32 S%lu !%s"), powerloss.pos_t, powerloss.P_file_name);
+         //SERIAL_ECHOLNPAIR("Gco : ", tmp_y);
+         //ZERO(powerloss.print_dir);
+        powerloss.recovery = Rec_Idle;
+        (void)settings.poweroff_save();
+         enqueue_and_echo_command(tmp_y);
+        //SERIAL_ECHOLN(tmp_y);
+        break;
+    }
+  }
+   if (powerloss.recovery == Rec_FilRunout) {
+    SERIAL_ECHOLNPGM("filament out");
+    gcode_M25();
+    // sprintf_P(tmp_y,PSTR("M25"));
+    //  SERIAL_ECHOLN(tmp_y);
+    //  enqueue_and_echo_command(tmp_y);
+    ///////
+    if(current_position[Z_AXIS]>=5)
+	{
+		sprintf_P(tmp_y, PSTR("G28 X"));
+		//SERIAL_ECHOLN(tmp_y);
+		enqueue_and_echo_command(tmp_y);
+	}
+    powerloss.recovery = Rec_Idle;
+  }
+
   endstops.event_handler();
   idle();
 }
