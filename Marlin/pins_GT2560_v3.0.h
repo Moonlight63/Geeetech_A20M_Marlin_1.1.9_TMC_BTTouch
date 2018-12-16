@@ -74,11 +74,11 @@
 #define E1_ENABLE_PIN      48
 
 #define TMC_USE_SW_SPI
-#define TMC_SW_MOSI       A0
-#define TMC_SW_MISO       A1
-#define TMC_SW_SCK        A2
-#define X_CS_PIN          A3
-#define Y_CS_PIN          A4
+#define TMC_SW_MOSI       54
+#define TMC_SW_MISO       55
+#define TMC_SW_SCK        56
+#define X_CS_PIN          57
+#define Y_CS_PIN          58
 
 //
 // Temperature Sensors

@@ -5223,7 +5223,7 @@ void lcd_quick_feedback(const bool clear_buttons) {
         last_sdfile_encoderPosition = encoderPosition;  // Save which file was selected for later use
       #endif
       card.openAndPrintFile(theCard.filename);
-      strcpy(powerloss.P_file_name, filename);
+      strcpy(powerloss.P_file_name, theCard.filename);
       SERIAL_ECHOLN(powerloss.P_file_name);
       powerloss.recovery = Rec_Idle;
       lcd_return_to_status();

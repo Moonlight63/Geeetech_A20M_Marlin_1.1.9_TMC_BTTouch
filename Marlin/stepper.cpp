@@ -96,6 +96,8 @@ extern Buzzer buzzer;
   #include <SPI.h>
 #endif
 
+#include "printcounter.h"
+
 Stepper stepper; // Singleton
 
 // public:

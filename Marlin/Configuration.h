@@ -797,7 +797,7 @@
 #define Z_PROBE_OFFSET_FROM_EXTRUDER -0.5   // Z offset: -below +above  [the nozzle]
 
 // Certain types of probes need to stay away from edges
-#define MIN_PROBE_EDGE 10
+#define MIN_PROBE_EDGE 5
 
 // X and Y axis travel speed (mm/m) between probes
 #define XY_PROBE_SPEED 8000
@@ -864,8 +864,8 @@
 // @section machine
 
 // Invert the stepper direction. Change (or reverse the motor connector) if an axis goes the wrong way.
-#define INVERT_X_DIR true
-#define INVERT_Y_DIR true
+#define INVERT_X_DIR false
+#define INVERT_Y_DIR false
 #define INVERT_Z_DIR false
 
 // @section extruder
@@ -1680,9 +1680,9 @@
 // http://reprap.org/wiki/RepRapDiscount_Full_Graphic_Smart_Controller
 //
 #define REPRAP_DISCOUNT_FULL_GRAPHIC_SMART_CONTROLLER
-#define ST7920_DELAY_1 DELAY_2_NOP
-#define ST7920_DELAY_2 DELAY_2_NOP
-#define ST7920_DELAY_3 DELAY_2_NOP
+#define ST7920_DELAY_1 DELAY_CYCLES(2)
+#define ST7920_DELAY_2 DELAY_CYCLES(2)
+#define ST7920_DELAY_3 DELAY_CYCLES(2)
 
 //
 // ReprapWorld Graphical LCD

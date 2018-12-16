@@ -12061,12 +12061,16 @@ inline void gcode_M355() {
    */
   inline void gcode_M163() {
     const int mix_index = parser.intval('S');
-    if (mix_index < MIXING_STEPPERS)
-      mixing_factor[mix_index] = MAX(parser.floatval('P'), 0.0);
+    if (mix_index < MIXING_STEPPERS) {
+      float mix_value = parser.floatval('P');
+      NOLESS(mix_value, 0.0);
+      mixing_factor[mix_index] = RECIPROCAL(mix_value);
+      //mixing_factor[mix_index] = MAX(parser.floatval('P'), 0.0);
       if(mix_index == 0)
       {
         powerloss.Nozzle0_Value = (uint8_t)(mix_value*100);
       }
+    }
   }
 
   /**
@@ -15522,7 +15526,7 @@ void loop() {
 		mixer.start_z =powerloss.start_zs;
 		mixer.end_z =powerloss.end_zs;    	
 	}
-         axis_homed[Z_AXIS] = axis_known_position[Z_AXIS] = true;
+        set_axis_is_at_home(Z_AXIS);
         powerloss.recovery = Rec_Recovering2;
         break;
       case Rec_Recovering2:
